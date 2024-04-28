@@ -26,7 +26,7 @@ from src.path_datasets_and_weights import path_full_dataset, path_runs_object_de
 
 # Set GPU Check 
 if torch.cuda.is_available():
-    torch.cuda.set_device(1)  # Set the CUDA device to use (e.g., GPU with index 0)
+    torch.cuda.set_device(0)  # Set the CUDA device to use (e.g., GPU with index 0)
     device = torch.device("cuda")   # Now you can use CUDA operations
 else:
     device = torch.device("cpu")

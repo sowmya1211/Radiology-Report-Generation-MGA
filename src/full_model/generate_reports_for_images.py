@@ -24,7 +24,7 @@ from src.dataset.constants import ANATOMICAL_REGIONS
 
 # Set GPU Check 
 if torch.cuda.is_available():
-    torch.cuda.set_device(1)  # Set the CUDA device to use (e.g., GPU with index 0)
+    torch.cuda.set_device(0)  # Set the CUDA device to use (e.g., GPU with index 0)
     device = torch.device("cuda")   # Now you can use CUDA operations
 else:
     device = torch.device("cpu")
@@ -109,11 +109,11 @@ def remove_duplicate_generated_sentences(generated_report, bert_score, sentence_
 
 '''NEW CODE START'''
 def remove_duplicate_regionwise_sentences(generated_sents_for_selected_regions, bert_score, sentence_tokenizer):
-    #print("Original: ",generated_sents_for_selected_regions)
+    
     #Getting one regionwise sentence as input - Split it into one sentence each using '.'
     split_sentences = generated_sents_for_selected_regions.split('.')
     new_sent = []
-    #chkpt_122 - giving sentenecs like "In comparison to the previous radiograph, etc"
+    
     for sent in split_sentences:
         sent = sent.strip()
         if "comparison" or "Comparison" in sent: #In comparison to the previous radiograph, there has been a decrease in the size of pleural effusion
@@ -126,7 +126,7 @@ def remove_duplicate_regionwise_sentences(generated_sents_for_selected_regions, 
         new_sent.append(sent)
     generated_sents_for_selected_regions = ". ".join(new_sent)
     generated_sents_for_selected_regions.replace(". ",".")
-    #print("Modified: ",generated_sents_for_selected_regions)
+    
     generated_sents_for_selected_regions = remove_duplicate_generated_sentences(generated_sents_for_selected_regions, bert_score, sentence_tokenizer)
     return generated_sents_for_selected_regions
 '''NEW CODE END'''
@@ -153,7 +153,7 @@ def get_report_for_image(model, image_tensor, tokenizer, bert_score, sentence_to
 
     generated_sents_for_selected_regions = tokenizer.batch_decode(
         beam_search_output, skip_special_tokens=True, clean_up_tokenization_spaces=True
-    )  # list[str]
+    )  
 
     '''NEW CODE START'''
     gen_sents = []
@@ -166,7 +166,7 @@ def get_report_for_image(model, image_tensor, tokenizer, bert_score, sentence_to
 
     generated_report = convert_generated_sentences_to_report(
         generated_sents_for_selected_regions, bert_score, sentence_tokenizer
-    )  # str
+    )  
 
     def get_region_name(region_index: int):
         for i, region_name in enumerate(ANATOMICAL_REGIONS):
@@ -179,7 +179,7 @@ def get_report_for_image(model, image_tensor, tokenizer, bert_score, sentence_to
     selected_regions = selected_regions[0] 
     generated_senetences_with_regions = []
     index_gen_sentence = 0
-    #print(selected_regions)
+    
     for region_index, region_selected_bool in enumerate(selected_regions):
         if region_selected_bool:
             region_name = get_region_name(region_index)
@@ -196,7 +196,7 @@ def get_image_tensor(image_path):
     image = cv2.imread(image_path, cv2.IMREAD_UNCHANGED)  # shape (3056, 2544)
     if len(image.shape) == 3:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    #print(image.shape)
+    
 
     val_test_transforms = A.Compose(
         [
@@ -209,7 +209,7 @@ def get_image_tensor(image_path):
 
     transform = val_test_transforms(image=image)
     image_transformed = transform["image"]  # shape (1, 512, 512)
-    #print(image_transformed.shape)
+    
     image_transformed_batch = image_transformed.unsqueeze(0)  # shape (1, 1, 512, 512)
 
     return image_transformed_batch
@@ -223,8 +223,7 @@ def get_model(checkpoint_path):
 
     # if there is a key error when loading checkpoint, try uncommenting down below
     # since depending on the torch version, the state dicts may be different
-    # checkpoint["model"]["object_detector.rpn.head.conv.weight"] = checkpoint["model"].pop("object_detector.rpn.head.conv.0.0.weight")
-    # checkpoint["model"]["object_detector.rpn.head.conv.bias"] = checkpoint["model"].pop("object_detector.rpn.head.conv.0.0.bias")
+    
     model = ReportGenerationModel(pretrain_without_lm_model=True)
     model.load_state_dict(checkpoint["model"])
     model.to(device, non_blocking=True)
@@ -236,25 +235,6 @@ def get_model(checkpoint_path):
 
 
 def main():
-    #checkpoint_path = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_8000/checkpoints/checkpoint_val_loss_23.315_overall_steps_24029.pt"
-    #checkpoint_path = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_8001/checkpoints/checkpoint_val_loss_23.287_overall_steps_48048.pt" #BEST SO FAR
-
-    #FINAL RUN
-    #checkpoint_path = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_107/checkpoints/checkpoint_val_loss_23.058_overall_steps_12010.pt" #PRETTY GOOD
-    #checkpoint_path = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_111/checkpoints/checkpoint_val_loss_23.061_overall_steps_12009.pt" #Better than before
-
-    #RUN_120
-    #checkpoint_path = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_120/checkpoints/checkpoint_val_loss_22.725_overall_steps_60866.pt" #Like 107 - last chkpt
-    #checkpoint_path = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_120/checkpoints/checkpoint_val_loss_22.735_overall_steps_32039.pt" #2nd last chkpt
-    #checkpoint_path = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_120/checkpoints/checkpoint_val_loss_22.792_overall_steps_20820.pt" #4th last chkpt
-    #checkpoint_path = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_120/checkpoints/checkpoint_val_loss_22.803_overall_steps_16020.pt" #5th last chkpt
-    #checkpoint_path = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_120/checkpoints/checkpoint_val_loss_22.940_overall_steps_12810.pt" #5th chkpt
-    #checkpoint_path = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_120/checkpoints/checkpoint_val_loss_23.124_overall_steps_10410.pt" #4th chkpt
-    #checkpoint_path = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_120/checkpoints/checkpoint_val_loss_23.232_overall_steps_7200.pt" #3rd ckpt
-
-    #RUN 121 - No mcln (Like rgrg)
-    #checkpoint_path = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_121/checkpoints/checkpoint_val_loss_23.287_overall_steps_7987.pt" 
-
     #RUN 122 - Num_slots:2 
     checkpoint_path = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_122/checkpoints/checkpoint_val_loss_22.038_overall_steps_14010.pt"
     
@@ -291,7 +271,6 @@ def main():
         generated_reports.append(generated_report)
         generated_sentences.append(generated_sentence)
     
-    #print(generated_sentences)
     write_generated_reports_to_txt(images_paths, generated_sentences, generated_reports, generated_reports_txt_path)
 
  

@@ -55,7 +55,6 @@ from src.full_model.run_configurations import (
 )
 from src.path_datasets_and_weights import path_full_dataset, path_runs_full_model
 
-#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Set GPU Check 
 if torch.cuda.is_available():
     torch.cuda.set_device(0)  # Set the CUDA device to use (e.g., GPU with index 0)
@@ -85,16 +84,6 @@ def get_data_loaders(tokenizer, val_dataset):
     g = torch.Generator()
     g.manual_seed(SEED)
 
-    # train_loader = DataLoader(
-    #     train_dataset,
-    #     collate_fn=custom_collate_train,
-    #     batch_size=BATCH_SIZE,
-    #     shuffle=True,
-    #     num_workers=NUM_WORKERS,
-    #     worker_init_fn=seed_worker,
-    #     generator=g,
-    #     pin_memory=True,
-    # )
     val_loader = DataLoader(
         val_dataset,
         collate_fn=custom_collate_val,
@@ -212,16 +201,11 @@ def get_datasets(row):
     }
 
     datasets_as_dfs = {}
-    #datasets_as_dfs["train"] = pd.read_csv(os.path.join(path_full_dataset, "train.csv"), usecols=usecols, converters=converters)
 
     # val dataset has additional "reference_report" column
     usecols.append("reference_report")
-    #datasets_as_dfs["valid"] = pd.read_csv(os.path.join("../rgrg+mdt/dataset-with-reference-reports/concatenated.csv"), usecols=usecols, converters=converters)
     datasets_as_dfs["valid"] = pd.read_csv(os.path.join("../rgrg+mdt/dataset-with-reference-reports/test.csv"), usecols=usecols, converters=converters)
     datasets_as_dfs["valid"] = datasets_as_dfs["valid"] [datasets_as_dfs["valid"]['mimic_image_file_path'] == row]
-    #print(datasets_as_dfs["valid"].columns)
-
-    #total_num_samples_train = len(datasets_as_dfs["train"])
     total_num_samples_val = len(datasets_as_dfs["valid"])
     print("loaded", total_num_samples_val)
 
@@ -229,22 +213,17 @@ def get_datasets(row):
     #new_num_samples_train = int(PERCENTAGE_OF_TRAIN_SET_TO_USE * total_num_samples_train)
     new_num_samples_val = int(PERCENTAGE_OF_VAL_SET_TO_USE * total_num_samples_val)
 
-    #log.info(f"Train: {new_num_samples_train} images")
     log.info(f"Val: {new_num_samples_val} images")
 
     # limit the datasets to those new numbers
-    #datasets_as_dfs["train"] = datasets_as_dfs["train"][:new_num_samples_train]
     datasets_as_dfs["valid"] = datasets_as_dfs["valid"][:new_num_samples_val]
 
-    #raw_train_dataset = Dataset.from_pandas(datasets_as_dfs["train"])
     raw_val_dataset = Dataset.from_pandas(datasets_as_dfs["valid"])
 
     return raw_val_dataset #raw_train_dataset, raw_val_dataset
 
 
 def infer(row):
-    #(tensorboard_folder_path, config_file_path, generated_sentences_and_reports_folder_path, log_file) = create_run_folder()
-
     # the datasets still contain the untokenized phrases
     raw_val_dataset = get_datasets(row)
 
@@ -253,10 +232,8 @@ def infer(row):
     # tokenize the raw datasets
     tokenized_val_dataset = get_tokenized_datasets(tokenizer, raw_val_dataset)
 
-    #train_transforms = get_transforms("train")
     val_transforms = get_transforms("val")
 
-    #train_dataset_complete = CustomDataset("train", tokenized_train_dataset, train_transforms, log)
     val_dataset_complete = CustomDataset("val", tokenized_val_dataset, val_transforms, log)
 
     val_dl = get_data_loaders(tokenizer, val_dataset_complete)
@@ -266,24 +243,12 @@ def infer(row):
         map_location=torch.device(device=device),
     )
     
-    # checkpoint = torch.load(
-    #     "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_8001/checkpoints/checkpoint_val_loss_23.287_overall_steps_48048.pt",
-    #     map_location=torch.device(device=device),
-    # )
-
-    # checkpoint = torch.load(
-    #     "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_8000/checkpoints/checkpoint_val_loss_23.315_overall_steps_24029.pt",
-    #     map_location=torch.device(device=device),
-    # )
-    
     tensorboard_folder_path = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/Inferences - Sample Reports Generated/DEMO_Tensorboard"
 
     writer = SummaryWriter(log_dir=tensorboard_folder_path)
     
     # if there is a key error when loading checkpoint, try uncommenting down below
     # since depending on the torch version, the state dicts may be different
-    # checkpoint["model"]["object_detector.rpn.head.conv.weight"] = checkpoint["model"].pop("object_detector.rpn.head.conv.0.0.weight")
-    # checkpoint["model"]["object_detector.rpn.head.conv.bias"] = checkpoint["model"].pop("object_detector.rpn.head.conv.0.0.bias")
     model = ReportGenerationModel(pretrain_without_lm_model=True)
     model.load_state_dict(checkpoint["model"])
     model.to(device, non_blocking=True)
@@ -291,9 +256,6 @@ def infer(row):
 
     del checkpoint
     
-    # run_params = {
-    #     "log_file": log_file
-    # }
     model.eval()
     
     gen_and_ref_sentences = {
@@ -357,10 +319,6 @@ def infer(row):
                     
                     print(f"Generation:\nOOM at batch number {num_batch}.\nError Message: {str(e)}\n\n")
 
-                    # with open(log_file, "a") as f:
-                    #     f.write("Generation:\n")
-                    #     f.write(f"OOM at batch number {num_batch}.\n")
-                    #     f.write(f"Error message: {str(e)}\n\n")
                 else:
                     raise e
 
@@ -373,10 +331,6 @@ def infer(row):
             # output == -1 if the region features that would have been passed into the language model were empty (see forward method for more details)
             if output == -1:
                 print(f"Generation:\nEmpty region features before language model at batch number {num_batch}.\n\n")
-                # with open(log_file, "a") as f:
-                #     f.write("Generation:\n")
-                #     f.write(f"Empty region features before language model at batch number {num_batch}.\n\n")
-
                 continue
             else:
                 # selected_regions is of shape [batch_size x 29] and is True for regions that should get a sentence
@@ -408,7 +362,6 @@ def infer(row):
                 sentence_tokenizer,
                 BERTSCORE_SIMILARITY_THRESHOLD
             )
-            #print(generated_reports)
 
             gen_and_ref_sentences["generated_sentences"].extend(generated_sents_for_selected_regions)
             gen_and_ref_sentences["generated_sentences_normal_selected_regions"].extend(gen_sents_for_normal_selected_regions)
@@ -441,23 +394,7 @@ def infer(row):
                     generated_sents_for_selected_regions,
                 )
 
-    # write_sentences_and_reports_to_file(
-    #     gen_and_ref_sentences,
-    #     gen_and_ref_reports,
-    #     gen_sentences_with_corresponding_regions,
-    #     generated_sentences_and_reports_folder_path,
-    #     10000,
-    # )
-    
     return (gen_sentences_with_corresponding_regions, gen_and_ref_reports)
-
-    #language_model_scores = compute_language_model_scores(gen_and_ref_sentences, gen_and_ref_reports)
-
-    #return language_model_scores
-
-
-    # x = evaluate_language_model(model, val_loader, tokenizer, writer, run_params, generated_sentences_and_reports_folder_path)
-    # print(x)
 
 if __name__ == "__main__":
     main()

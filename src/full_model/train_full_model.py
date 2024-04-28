@@ -562,22 +562,9 @@ def main():
 
     train_loader, val_loader = get_data_loaders(tokenizer, train_dataset_complete, val_dataset_complete)
 
-    # resume_training = False
     checkpoint = None
-    #Resnet50
-    # checkpoint = torch.load("/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_850/checkpoints/checkpoint_val_loss_119.402_overall_steps_6012.pt",
-    #                         map_location=device)
-
     checkpoint = torch.load("/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_4/checkpoints/checkpoint_val_loss_121.669_overall_steps_2004.pt",
                             map_location=device)
-    # checkpoint = torch.load("/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_5/checkpoints/checkpoint_val_loss_121.469_overall_steps_2004.pt",
-    #                         map_location=device)
-
-    #Resnet101
-    # checkpoint = torch.load("/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_800/checkpoints/checkpoint_val_loss_118.429_overall_steps_5010.pt",
-    #                        map_location=device)
-    
-    
     model = get_model(checkpoint)
 
     opt = AdamW(model.parameters(), lr=LR)
@@ -586,14 +573,6 @@ def main():
     current_epoch = 0
     overall_steps_taken = 0
     lowest_val_loss = np.inf
-
-    # if resume_training:
-    #     model.load_state_dict(checkpoint["model"])
-    #     opt.load_state_dict(checkpoint["optimizer"])
-    #     scaler.load_state_dict(checkpoint["scaler"])
-    #     current_epoch = checkpoint["current_epoch"]
-    #     overall_steps_taken = checkpoint["overall_steps_taken"]
-    #     lowest_val_loss = checkpoint["lowest_val_loss"]
 
     lr_scheduler = ReduceLROnPlateau(opt, mode="min", factor=FACTOR_LR_SCHEDULER, patience=PATIENCE_LR_SCHEDULER, threshold=THRESHOLD_LR_SCHEDULER, cooldown=COOLDOWN_LR_SCHEDULER)
     writer = SummaryWriter(log_dir=tensorboard_folder_path)

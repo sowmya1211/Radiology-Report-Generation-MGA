@@ -37,8 +37,8 @@ from src.full_model.train_full_model import get_tokenizer
 from src.path_datasets_and_weights import path_full_dataset, path_runs_full_model, path_test_set_evaluation_scores_txt_files
 
 # specify the checkpoint you want to evaluate by setting "RUN" and "CHECKPOINT"
-RUN = 106 #105 #8000
-CHECKPOINT = "checkpoint_val_loss_23.014_overall_steps_16019.pt" #"checkpoint_val_loss_23.230_overall_steps_8000.pt"#"checkpoint_val_loss_23.287_overall_steps_48048.pt" #"checkpoint_val_loss_23.315_overall_steps_24029.pt" 
+RUN = 106 
+CHECKPOINT = "checkpoint_val_loss_23.014_overall_steps_16019.pt" 
 BERTSCORE_SIMILARITY_THRESHOLD = 0.9  
 IMAGE_INPUT_SIZE = 512
 BATCH_SIZE = 4
@@ -741,9 +741,7 @@ def get_model():
 
     # if there is a key error when loading checkpoint, try uncommenting down below
     # since depending on the torch version, the state dicts may be different
-    # checkpoint["model"]["object_detector.rpn.head.conv.weight"] = checkpoint["model"].pop("object_detector.rpn.head.conv.0.0.weight")
-    # checkpoint["model"]["object_detector.rpn.head.conv.bias"] = checkpoint["model"].pop("object_detector.rpn.head.conv.0.0.bias")
-
+    
     # pretrain_without_lm_model=True, since we don't need to compute the language model loss (see forward method of full model)
     # we evaluate the language model in function evaluate_language_model_on_test_set by generating sentences/reports based on input images
     model = ReportGenerationModel(pretrain_without_lm_model=True)

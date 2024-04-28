@@ -62,10 +62,9 @@ from src.full_model.run_configurations import (
 )
 from src.path_datasets_and_weights import path_chexbert_weights
 
-#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Set GPU Check 
 if torch.cuda.is_available():
-    torch.cuda.set_device(1)  # Set the CUDA device to use (e.g., GPU with index 0)
+    torch.cuda.set_device(0)  # Set the CUDA device to use (e.g., GPU with index 0)
     device = torch.device("cuda")   # Now you can use CUDA operations
 else:
     device = torch.device("cpu")
@@ -863,10 +862,9 @@ def plot_detections_and_sentences_to_tensorboard(
                 global_step=overall_steps_taken,
                 dataformats="HWC",
             )
-            #print(type(im), "Saving")
+            
             im = Image.fromarray(im)
             im.save(f"images/img_{writer_image_num}_region_set_{num_region_set}.jpg")
-            #plt.show(fig)
 
             plt.close(fig)
 
@@ -1009,11 +1007,11 @@ def get_generated_reports(generated_sentences_for_selected_regions, selected_reg
 
     '''NEW CODE START'''
     def remove_duplicate_regionwise_sentences(generated_sents_for_selected_regions, bert_score, sentence_tokenizer):
-        #print("Original: ",generated_sents_for_selected_regions)
+        
         #Getting one regionwise sentence as input - Split it into one sentence each using '.'
         split_sentences = generated_sents_for_selected_regions.split('.')
         new_sent = []
-        #chkpt_122 - giving sentenecs like "In comparison to the previous radiograph, etc"
+        
         for sent in split_sentences:
             sent = sent.strip()
             if "comparison" or "Comparison" in sent: #In comparison to the previous radiograph, there has been a decrease in the size of pleural effusion
@@ -1026,10 +1024,9 @@ def get_generated_reports(generated_sentences_for_selected_regions, selected_reg
             new_sent.append(sent)
         generated_sents_for_selected_regions = ". ".join(new_sent)
         generated_sents_for_selected_regions.replace(". ",".")
-        #print("Modified: ",generated_sents_for_selected_regions)
+        
         generated_sents_for_selected_regions, _ = remove_duplicate_generated_sentences(generated_sents_for_selected_regions, bert_score, sentence_tokenizer)
         return generated_sents_for_selected_regions
-    '''NEW CODE END'''
 
     def remove_duplicate_generated_sentences(gen_report_single_image, bert_score,sentence_tokenizer):
         def check_gen_sent_in_sents_to_be_removed(gen_sent, similar_generated_sents_to_be_removed):
@@ -1093,8 +1090,6 @@ def get_generated_reports(generated_sentences_for_selected_regions, selected_reg
         return gen_report_single_image, similar_generated_sents_to_be_removed
 
     bert_score = evaluate.load("bertscore")
-    """from bert_score.scorer import BERTScore
-    bert_score = BERTScore()"""
     
     generated_reports = []
     removed_similar_generated_sentences = []
@@ -1112,7 +1107,6 @@ def get_generated_reports(generated_sentences_for_selected_regions, selected_reg
         # update curr_index for next image
         curr_index += num_selected_regions_single_image
 
-        '''NEW CODE'''
         print("Generated Sentences Original: \n",gen_sents_single_image)
         
         gen_sents = []
@@ -1123,7 +1117,6 @@ def get_generated_reports(generated_sentences_for_selected_regions, selected_reg
         
         gen_sents_single_image = gen_sents
         print("Generated Sentences Modified: \n",gen_sents_single_image)
-        '''NEW CODE'''
 
         # concatenate generated sentences of a single image to a continuous string gen_report_single_image
         gen_report_single_image = " ".join(sent for sent in gen_sents_single_image)
