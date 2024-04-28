@@ -1,0 +1,4 @@
+Training:
+OOM at epoch 1, batch number 5344.
+Error message: CUDA out of memory. Tried to allocate 1.25 GiB (GPU 1; 31.74 GiB total capacity; 26.05 GiB already allocated; 359.12 MiB free; 28.38 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF
+

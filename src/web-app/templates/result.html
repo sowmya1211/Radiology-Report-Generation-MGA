@@ -1,0 +1,158 @@
+<!--
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Result</title>
+    <style>
+        /* Adjust the width and height of the image */
+        img {
+            width: 50%; /* Adjust as needed */
+            height: auto; /* Maintains aspect ratio */
+        }
+    </style>
+</head>
+<body>
+    <h1>Result</h1>
+    <h2>Selected Image: {{ selected_image }}</h2>
+    <p>Result from ML model: {{ result }}</p>
+    <img src="data:image/jpeg;base64,{{ image_data }}" alt="Selected Image">
+    <div class="gallery">
+        {% for image_file in image_files %}
+            <img src="data:image/jpeg;base64,{{ image_file }}" style="width: 300px; height: 300px; margin: 10px;">
+        {% endfor %}
+    </div>
+</body>
+</html>
+-->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Result</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h2, h3 {
+            text-align: center;
+        }
+
+        p {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        img {
+            display: block;
+            margin: 0 auto;
+            width: 30%;
+            height: auto;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .gallery {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .gallery img {
+            width: 300px;
+            height: 300px;
+            margin: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            font-family: Arial, sans-serif; /* Change to the desired font */
+            text-align: center;
+            color: rgb(0, 0, 0);
+            margin: 5px;
+            justify-content: center;
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table tr{
+            display:flex; flex-direction: row;
+            margin:5px;
+        }
+        table tr th{
+            padding:2px;
+            align-self: flex-start;
+            width: 20%;
+        }
+        table tr td{
+            padding:2px;
+            width: 80%;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 style="text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1)">Automatic Report Generation for Medical Images Using Deep Learning Techniques</h1>
+        
+        <h2>Input Image</h2>
+
+        <h3>Subject ID: {{ subject_id }}</h3>
+        <h3>Study ID: {{ study_id }}</h3>
+        <h3>Image ID: {{ image_id }}</h3>
+
+        <img src="data:image/jpeg;base64,{{ image_data }}" alt="Selected Image" width="50px" height="50px">
+
+        <h3>Bounding Boxes for Region Sets</h3>
+        <div class="gallery">
+            {% for image_file in image_files %}
+                <img src="data:image/jpeg;base64,{{ image_file }}" alt="Image {{ loop.index }}" style="width: 300px; height: 300px; margin: 10px;">
+            {% endfor %}
+        </div>
+
+        <h2>Reference Report</h2>
+        <ul>
+            {% for report in reference_reports %}
+                <li>{{ report }}</li>
+            {% endfor %}
+        </ul>
+        
+
+        <h2>Generated Report</h2>
+        <ul>
+            {% for report in generated_reports %}
+            <li>{{ report }}</li>
+            {% endfor %}
+        </ul>
+
+        <h2>Generated Sentences with Regions</h2>
+        <table style = "text-align: left;">
+            {% for region, sentence in region_sentence_pairs %}
+                <tr>
+                    <th>{{region}}</th>
+                    <td>{{sentence}}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>
