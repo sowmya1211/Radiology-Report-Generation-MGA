@@ -287,10 +287,6 @@ def train_model(
 
 
 def get_model(checkpoint=None):
-    # if there is a key error when loading checkpoint, try uncommenting down below
-    # since depending on the torch version, the state dicts may be different
-    # checkpoint["model"]["object_detector.rpn.head.conv.weight"] = checkpoint["model"].pop("object_detector.rpn.head.conv.0.0.weight")
-    # checkpoint["model"]["object_detector.rpn.head.conv.bias"] = checkpoint["model"].pop("object_detector.rpn.head.conv.0.0.bias")
 
     model = ReportGenerationModel(pretrain_without_lm_model=PRETRAIN_WITHOUT_LM_MODEL)
     model.to(device, non_blocking=True)
@@ -562,7 +558,7 @@ def main():
     train_loader, val_loader = get_data_loaders(tokenizer, train_dataset_complete, val_dataset_complete)
 
     checkpoint = None
-    checkpoint = torch.load("/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_4/checkpoints/checkpoint_val_loss_121.669_overall_steps_2004.pt",
+    checkpoint = torch.load("../Radiology-Report-Generation---MGA/runs/full_model/run_1/checkpoints",
                             map_location=device)
     model = get_model(checkpoint)
 

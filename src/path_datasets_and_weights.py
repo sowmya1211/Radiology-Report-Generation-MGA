@@ -19,4 +19,4 @@ path_full_dataset = "../dataset-with-reference-reports" #Holds the dataset split
 path_chexbert_weights = "CheXbert/src/models/chexbert.pth"
 path_runs_object_detector = "../runs/object_detector" #To store checkpoints of first stage (object detector)  
 path_runs_full_model = "../runs/full_model" #To store checkpoints of last 2 stages (full model with and without language model)
-path_test_set_evaluation_scores_txt_files = "../runs/scores" #To store scores and generated sentences and reports during testing
+path_test_set_evaluation_scores_txt_files = "../runs/scores" #To store scores and generated sentences and reports during testing 

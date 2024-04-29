@@ -20,7 +20,7 @@ The specific information (i.e. columns) of each row are:
     - bbox_is_abnormal (List[bool]): a list of (always) length 29 that indicates if a bbox was described as abnormal (True) by its reference phrase or not. bboxes that do
     not have a reference phrase are considered normal by default.
 
-The valid.csv, test.csv and test-2.csv have the additional information of:
+The valid.csv, test.csv and test-2.csv have the additional information of: 
     - reference_report (str): the "findings" section of the MIMIC-CXR report corresponding to the image (see function get_reference_report)
 
 For the validation set, we only include images that have bbox_coordinates, bbox_labels for all 29 regions.

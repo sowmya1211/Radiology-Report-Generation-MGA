@@ -35,7 +35,7 @@ logging.basicConfig(level=logging.INFO, format="[%(levelname)s]: %(message)s")
 log = logging.getLogger(__name__)
 
 # define configurations for training run
-RUN = 10
+RUN = 1
 # comment can be useful to add additional information to run_config.txt file
 RUN_COMMENT = """Enter comment here."""
 SEED = 41

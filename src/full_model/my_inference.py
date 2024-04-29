@@ -21,39 +21,21 @@ from tqdm import tqdm
 from src.dataset.constants import ANATOMICAL_REGIONS
 from src.full_model.custom_collator import CustomCollator
 from src.full_model.custom_dataset import CustomDataset
-from src.full_model.my_evaluate import get_generated_reports, get_ref_sentences_for_selected_regions, get_sents_for_normal_abnormal_selected_regions, plot_detections_and_sentences_to_tensorboard, update_gen_and_ref_sentences_for_regions, update_gen_sentences_with_corresponding_regions, update_num_generated_sentences_per_image, write_sentences_and_reports_to_file
+from src.full_model.my_evaluate import get_generated_reports, get_ref_sentences_for_selected_regions, get_sents_for_normal_abnormal_selected_regions, plot_detections_and_sentences_to_tensorboard, update_gen_and_ref_sentences_for_regions, update_gen_sentences_with_corresponding_regions, update_num_generated_sentences_per_image
 from src.full_model.report_generation_model import ReportGenerationModel
 from src.full_model.run_configurations import (
-    RUN,
-    RUN_COMMENT,
     SEED,
     PRETRAIN_WITHOUT_LM_MODEL,
     IMAGE_INPUT_SIZE,
-    PERCENTAGE_OF_TRAIN_SET_TO_USE,
     PERCENTAGE_OF_VAL_SET_TO_USE,
     BATCH_SIZE,
-    EFFECTIVE_BATCH_SIZE,
-    NUM_WORKERS,
-    EPOCHS,
-    LR,
-    EVALUATE_EVERY_K_BATCHES,
-    PATIENCE_LR_SCHEDULER,
-    THRESHOLD_LR_SCHEDULER,
-    FACTOR_LR_SCHEDULER,
-    COOLDOWN_LR_SCHEDULER,
     NUM_BEAMS,
     MAX_NUM_TOKENS_GENERATE,
-    NUM_BATCHES_OF_GENERATED_SENTENCES_TO_SAVE_TO_FILE,
     NUM_BATCHES_OF_GENERATED_REPORTS_TO_SAVE_TO_FILE,
     NUM_BATCHES_TO_PROCESS_FOR_LANGUAGE_MODEL_EVALUATION,
     NUM_IMAGES_TO_PLOT,
     BERTSCORE_SIMILARITY_THRESHOLD,
-    WEIGHT_OBJECT_DETECTOR_LOSS,
-    WEIGHT_BINARY_CLASSIFIER_REGION_SELECTION_LOSS,
-    WEIGHT_BINARY_CLASSIFIER_REGION_ABNORMAL_LOSS,
-    WEIGHT_LANGUAGE_MODEL_LOSS,
 )
-from src.path_datasets_and_weights import path_full_dataset, path_runs_full_model
 
 # Set GPU Check 
 if torch.cuda.is_available():
@@ -94,7 +76,7 @@ def get_data_loaders(tokenizer, val_dataset):
     )
 
     return val_loader
-
+ 
 
 def get_transforms(dataset: str):
     mean = 0.471
@@ -203,7 +185,7 @@ def get_datasets(row):
 
     # val dataset has additional "reference_report" column
     usecols.append("reference_report")
-    datasets_as_dfs["valid"] = pd.read_csv(os.path.join("../rgrg+mdt/dataset-with-reference-reports/test.csv"), usecols=usecols, converters=converters)
+    datasets_as_dfs["valid"] = pd.read_csv(os.path.join("../Radiology-Report-Generation---MGA/dataset-with-reference-reports/test-demo.csv"), usecols=usecols, converters=converters)
     datasets_as_dfs["valid"] = datasets_as_dfs["valid"] [datasets_as_dfs["valid"]['mimic_image_file_path'] == row]
     total_num_samples_val = len(datasets_as_dfs["valid"])
     print("loaded", total_num_samples_val)
@@ -238,11 +220,11 @@ def infer(row):
     val_dl = get_data_loaders(tokenizer, val_dataset_complete)
 
     checkpoint = torch.load(
-        "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_122/checkpoints/checkpoint_val_loss_22.038_overall_steps_14010.pt",
+        "../Radiology-Report-Generation---MGA/runs/full_model/run_122/checkpoints/checkpoint_val_loss_22.038_overall_steps_14010.pt",
         map_location=torch.device(device=device),
     )
     
-    tensorboard_folder_path = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/Inferences - Sample Reports Generated/DEMO_Tensorboard"
+    tensorboard_folder_path = "../Radiology-Report-Generation---MGA/Inferences - Sample Reports Generated/DEMO_Tensorboard"
 
     writer = SummaryWriter(log_dir=tensorboard_folder_path)
     

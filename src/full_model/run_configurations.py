@@ -26,7 +26,7 @@ Ideally, the training should go like this:
     - load best pre-trained full model weights from step (2) in src/full_model/train_full_model.py
     - train full model with src/full_model/train_full_model.py
 """
-RUN = 110
+RUN = 1
 RUN_COMMENT = """CLN in 23""" 
 SEED = 42
 PRETRAIN_WITHOUT_LM_MODEL = False 

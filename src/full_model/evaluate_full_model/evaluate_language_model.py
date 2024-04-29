@@ -77,8 +77,7 @@ def compute_NLG_scores(nlg_metrics: list[str], gen_sents_or_reports: list[str], 
         }
 
         Hence we convert the generated/reference sentences/reports into the appropriate format and also tokenize them
-        following Nicolson's (https://arxiv.org/pdf/2201.09405.pdf) implementation (https://github.com/aehrc/cvt2distilgpt2/blob/main/transmodal/metrics/chen.py):
-        see lines 132 and 133
+        following Nicolson's (https://arxiv.org/pdf/2201.09405.pdf) implementation (https://github.com/aehrc/cvt2distilgpt2/blob/main/transmodal/metrics/chen.py)
         """
         sents_or_reports_converted = {}
         for num, text in enumerate(sents_or_reports):
@@ -123,45 +122,6 @@ def compute_NLG_scores(nlg_metrics: list[str], gen_sents_or_reports: list[str], 
 
 
 def compute_clinical_efficacy_scores(language_model_scores: dict, gen_reports: list[str], ref_reports: list[str]):
-    """
-    This function computes:
-        - micro average CE scores over all 14 conditions
-        - micro average CE scores over 5 conditions ("Cardiomegaly", "Edema", "Consolidation", "Atelectasis", "Pleural Effusion")
-        -> this is done following Miura (https://arxiv.org/pdf/2010.10042.pdf)
-        - (micro) average CE scores of each condition
-        - example-based CE scores over all 14 conditions
-        -> this is done following Nicolson (https://arxiv.org/pdf/2201.09405.pdf)
-
-    To compute these scores, we first need to get the disease labels extracted by CheXbert for both the generated and reference reports.
-    This is done by the (nested) function "get_chexbert_labels_for_gen_and_ref_reports". Inside this function, there is another function
-    called "label" from the module src/CheXbert/src/label.py that extracts these labels requiring 2 input arguments:
-        1. chexbert (nn.Module): instantiated chexbert model
-        2. csv_path (str): path to the csv file with the reports. The csv file has to have 1 column titled "Report Impression"
-        under which the reports can be found
-
-    We use a temporary directory to create the csv files for the generated and reference reports.
-
-    The function label returns preds_gen_reports and preds_ref_reports respectively, which are List[List[int]],
-    with the outer list always having len=14 (for 14 conditions, specified in CheXbert/src/constants.py),
-    and the inner list has len=num_reports.
-
-    E.g. the 1st inner list could be [2, 1, 0, 3], which means the 1st report has label 2 for the 1st condition (which is 'Enlarged Cardiomediastinum'),
-    the 2nd report has label 1 for the 1st condition, the 3rd report has label 0 for the 1st condition, the 4th and final report label 3 for the 1st condition.
-
-    There are 4 possible labels:
-        0: blank/NaN (i.e. no prediction could be made about a condition, because it was no mentioned in a report)
-        1: positive (condition was mentioned as present in a report)
-        2: negative (condition was mentioned as not present in a report)
-        3: uncertain (condition was mentioned as possibly present in a report)
-
-    To compute the micro average scores (i.e. all the scores except of the example-based scores), we follow the implementation of the paper
-    by Miura et. al., who considered the negative and blank/NaN to be one whole negative class, and positive and uncertain to be one whole positive class.
-    For reference, see lines 141 and 143 of Miura's implementation: https://github.com/ysmiura/ifcc/blob/master/eval_prf.py#L141,
-    where label 3 is converted to label 1, and label 2 is converted to label 0.
-
-    To compute the example-based scores, we follow Nicolson's implementation, who considered blank/NaN, negative and uncertain to be the negative class,
-    and only positive to be the positive class. Meaning labels 2 and 3 are converted to label 0.
-    """
 
     def get_chexbert():
         model = bert_labeler()
@@ -198,13 +158,6 @@ def compute_clinical_efficacy_scores(language_model_scores: dict, gen_reports: l
 
     def compute_micro_average_CE_scores(preds_gen_reports, preds_ref_reports):
         def convert_labels_like_miura(preds_reports: list[list[int]]):
-            """
-            See doc string of update_clinical_efficacy_scores function for more details.
-            Miura (https://arxiv.org/pdf/2010.10042.pdf) considers blank/NaN (label 0) and negative (label 2) to be the negative class,
-            and positive (label 1) and uncertain (label 3) to be the positive class.
-
-            Thus we convert label 2 -> label 0 and label 3 -> label 1.
-            """
             def convert_label(label: int):
                 if label == 2:
                     return 0

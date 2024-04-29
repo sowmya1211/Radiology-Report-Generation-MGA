@@ -107,7 +107,6 @@ def remove_duplicate_generated_sentences(generated_report, bert_score, sentence_
 
     return generated_report
 
-'''NEW CODE START'''
 def remove_duplicate_regionwise_sentences(generated_sents_for_selected_regions, bert_score, sentence_tokenizer):
     
     #Getting one regionwise sentence as input - Split it into one sentence each using '.'
@@ -129,7 +128,6 @@ def remove_duplicate_regionwise_sentences(generated_sents_for_selected_regions, 
     
     generated_sents_for_selected_regions = remove_duplicate_generated_sentences(generated_sents_for_selected_regions, bert_score, sentence_tokenizer)
     return generated_sents_for_selected_regions
-'''NEW CODE END'''
 
 def convert_generated_sentences_to_report(generated_sents_for_selected_regions, bert_score, sentence_tokenizer):
     generated_report = " ".join(sent for sent in generated_sents_for_selected_regions)
@@ -155,14 +153,12 @@ def get_report_for_image(model, image_tensor, tokenizer, bert_score, sentence_to
         beam_search_output, skip_special_tokens=True, clean_up_tokenization_spaces=True
     )  
 
-    '''NEW CODE START'''
     gen_sents = []
     for sent in generated_sents_for_selected_regions:
         sent = remove_duplicate_regionwise_sentences(sent,bert_score,sentence_tokenizer)
         gen_sents.append(sent)
     
     generated_sents_for_selected_regions = gen_sents
-    '''NEW CODE END'''
 
     generated_report = convert_generated_sentences_to_report(
         generated_sents_for_selected_regions, bert_score, sentence_tokenizer
@@ -236,7 +232,7 @@ def get_model(checkpoint_path):
 
 def main():
     #RUN 122 - Num_slots:2 
-    checkpoint_path = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/runs/full_model/run_122/checkpoints/checkpoint_val_loss_22.038_overall_steps_14010.pt"
+    checkpoint_path = "../Radiology-Report-Generation---MGA/dataset-with-reference-reports/runs/full_model/run_122/checkpoints/checkpoint_val_loss_22.038_overall_steps_14010.pt"
     
 
     model = get_model(checkpoint_path) 
@@ -245,15 +241,10 @@ def main():
 
     # paths to the images that we want to generate reports for
     images_paths = [
-        "/home/miruna/ReportGeneration_SSS_24/dataset/physionet.org/files/mimic-cxr-jpg/2.0.0/files/p10/p10001401/s51065211/8061113f-c019f3ae-fd1b7c54-33e8690d-be838099.jpg", #Test image
-        "/home/miruna/ReportGeneration_SSS_24/dataset/physionet.org/files/mimic-cxr-jpg/2.0.0/files/p11/p11000183/s51967845/3b8571b4-1418c4eb-ddf2b4bc-5cb96d9b-3b99df84.jpg",
-         "/home/miruna/ReportGeneration_SSS_24/dataset/physionet.org/files/mimic-cxr-jpg/2.0.0/files/p11/p11000011/s51029426/ff213473-b64efa18-863f2bad-76181481-30bc30d7.jpg",
-        "/home/miruna/ReportGeneration_SSS_24/dataset/physionet.org/files/mimic-cxr-jpg/2.0.0/files/p10/p10008304/s50053244/eee6e206-f7bc49c7-563f869c-ee75184d-c81e2907.jpg",
-        "/home/miruna/ReportGeneration_SSS_24/dataset/physionet.org/files/mimic-cxr-jpg/2.0.0/files/p10/p10004235/s58604118/c24939ff-cf96a7e2-dcc4a608-a9f63b02-2b64eca1.jpg",
-        "/home/miruna/ReportGeneration_SSS_24/dataset/physionet.org/files/mimic-cxr-jpg/2.0.0/files/p10/p10002661/s53368584/2630b0b8-2d5af3a6-1a02c2ca-952e9535-b44c35ee.jpg" 
+        "../Radiology-Report-Generation---MGA/dataset-with-reference-reports/images/test_1.jpg"
     ]
 
-    generated_reports_txt_path = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/Inferences - Sample Reports Generated/Inference-output.txt"
+    generated_reports_txt_path = "../Radiology-Report-Generation---MGA/Inferences - Sample Reports Generated/Inference-output.txt"
     generated_reports = []  
     generated_sentences = []
 
