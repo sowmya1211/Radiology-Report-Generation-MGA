@@ -70,11 +70,6 @@ class ObjectDetector(nn.Module):
         # we have to define a custom anchor generator that generates anchors that suit
         # e.g. the spine (aspect ratio ~= 8.0) or the abdomen (aspect ratio ~= 0.6)
 
-        # TODO: run anchor optimization to find suitable hyperparameters for anchor generator
-        # https://www.mathworks.com/help/vision/ug/estimate-anchor-boxes-from-training-data.html
-        # https://github.com/martinzlocha/anchor-optimization
-        # https://towardsdatascience.com/anchor-boxes-the-key-to-quality-object-detection-ddf9d612d4f9
-
         # since the input image size is 512 x 512, we choose the sizes accordingly
         anchor_generator = AnchorGenerator(
             sizes=((20, 40, 60, 80, 100, 120, 140, 160, 180, 300),),

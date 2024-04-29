@@ -10,8 +10,7 @@ The specific information (i.e. columns) of each row are:
     - image_id (str): id of the single image
     - mimic_image_file_path (str): file path to the jpg of the single image on the workstation
     - bbox_coordinates (List[List[int]]): a nested list where the outer list (usually) has a length of 29 and the inner list always a length of 4 (for 4 bbox coordinates).
-    Contains the bbox coordinates for all (usually 29) regions of a single image. There are some images that don't have bbox coordinates for all 29 regions
-    (see log_file_dataset_creation.txt), thus it's possible that the outer list does not have length 29.
+    Contains the bbox coordinates for all (usually 29) regions of a single image. 
     - bbox_labels (List[int]): a list of (usually) length 29 that has region/class labels corresponding to the bbox_coordinates. Usually, the bbox_labels list will be
     of the form [1, 2, 3, ..., 28, 29], i.e. continuously counting from 1 to 29. It starts at 1 since 0 is considered the background class for object detectors.
     However, since some images don't have bbox coordinates for all 29 regions, it's possible that there are missing numbers in the list.
@@ -40,7 +39,6 @@ The train set contains all train images, even those without bbox_coordinates, bb
 """
 import csv
 import json 
-import logging
 import os
 import re
 
@@ -56,45 +54,14 @@ from src.path_datasets_and_weights import path_chest_imagenome, path_mimic_cxr, 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# to log certain statistics during dataset creation
-txt_file_for_logging = "/home/miruna/ReportGeneration_SSS_24/rgrg+mdt/dataset-stats and logs/log_file_dataset_creation.txt"
-
-logging.basicConfig(level=logging.INFO, format="[%(levelname)s]: %(message)s")
-log = logging.getLogger(__name__)
-
 # constant specifies how many rows to create in the customized csv files
 # can be useful to create small sample datasets (e.g. of len 200) for testing things
 # if NUM_ROWS_TO_CREATE_IN_NEW_CSV_FILES is None, then all possible rows are created
 NUM_ROWS_TO_CREATE_IN_NEW_CSV_FILES = 500 
 
 
-def write_stats_to_log_file(
-    dataset: str,
-    num_images_ignored_or_avoided: int,
-    missing_images: list[str],
-    missing_reports: list[str],
-    num_faulty_bboxes: int,
-    num_images_without_29_regions: int
-):
-    with open(txt_file_for_logging, "a") as f:
-        f.write(f"{dataset}:\n")
-        f.write(f"\tnum_images_ignored_or_avoided: {num_images_ignored_or_avoided}\n")
-
-        f.write(f"\tnum_missing_images: {len(missing_images)}\n")
-        for missing_img in missing_images:
-            f.write(f"\t\tmissing_img: {missing_img}\n")
-
-        f.write(f"\tnum_missing_reports: {len(missing_reports)}\n")
-        for missing_rep in missing_reports:
-            f.write(f"\t\tmissing_rep: {missing_rep}\n")
-
-        f.write(f"\tnum_faulty_bboxes: {num_faulty_bboxes}\n")
-        f.write(f"\tnum_images_without_29_regions: {num_images_without_29_regions}\n\n")
-
 
 def write_rows_in_new_csv_file(dataset: str, csv_rows: list[list]) -> None:
-    log.info(f"Writing rows into new {dataset}.csv file...")
-
     if dataset == "test":
         csv_rows, csv_rows_less_than_29_regions = csv_rows
 
@@ -371,7 +338,6 @@ def get_rows(dataset: str, path_csv_file: str, image_ids_to_avoid: set) -> list[
     # used in function convert_phrases_to_single_string
     sentence_tokenizer = spacy.load("en_core_web_trf")
 
-    # stats will be logged in path_to_log_file
     num_images_ignored_or_avoided = 0
     num_faulty_bboxes = 0
     num_images_without_29_regions = 0
@@ -521,8 +487,6 @@ def get_rows(dataset: str, path_csv_file: str, image_ids_to_avoid: set) -> list[
             if NUM_ROWS_TO_CREATE_IN_NEW_CSV_FILES and num_rows_created >= NUM_ROWS_TO_CREATE_IN_NEW_CSV_FILES:
                 break
 
-    write_stats_to_log_file(dataset, num_images_ignored_or_avoided, missing_images, missing_reports, num_faulty_bboxes, num_images_without_29_regions)
-
     if dataset == "test":
         return csv_rows, csv_rows_less_than_29_regions
     else:
@@ -530,8 +494,6 @@ def get_rows(dataset: str, path_csv_file: str, image_ids_to_avoid: set) -> list[
 
 
 def create_new_csv_file(dataset: str, path_csv_file: str, image_ids_to_avoid: set) -> None:
-    log.info(f"Creating new {dataset}.csv file...")
-
     # get rows to create new csv_file
     # csv_rows is a list of lists, where an inner list specifies all information about a single image
     csv_rows = get_rows(dataset, path_csv_file, image_ids_to_avoid)
@@ -539,13 +501,9 @@ def create_new_csv_file(dataset: str, path_csv_file: str, image_ids_to_avoid: se
     # write those rows into a new csv file
     write_rows_in_new_csv_file(dataset, csv_rows)
 
-    log.info(f"Creating new {dataset}.csv file... DONE!")
-
 
 def create_new_csv_files(csv_files_dict, image_ids_to_avoid):
     if os.path.exists(dataset):
-        log.error(f"Full dataset folder already exists at {path_full_dataset}.")
-        log.error("Delete dataset folder or rename variable path_full_dataset in src/path_datasets_and_weights.py before running script to create new folder!")
         return None
 
     os.mkdir(path_full_dataset)

@@ -97,7 +97,6 @@ def get_data_loaders(tokenizer, val_dataset):
 
 
 def get_transforms(dataset: str):
-    # see compute_mean_std_dataset.py in src/dataset
     mean = 0.471
     std = 0.302
 

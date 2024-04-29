@@ -17,20 +17,19 @@ Ideally, the training should go like this:
     - load best object detector weights from step (1) into the object detector in the __init__ method in src/full_model/report_generation_model.py
     - set PRETRAIN_WITHOUT_LM_MODEL = True in this file
     - make sure that in the main function of src/full_model/train_full_model.py,
-    no other weights are loaded into the instantiated ReportGenerationModel (i.e. make sure that line 567 is commented out)
+    no other weights are loaded into the instantiated ReportGenerationModel
     - pre-train full model without language model with src/full_model/train_full_model.py
 
 (3) Full model training:
     - uncomment lines that load object detector weights in the __init__ method (since those weights will be overwritten anyway)
     - set PRETRAIN_WITHOUT_LM_MODEL = False in this file
     - load best pre-trained full model weights from step (2) in src/full_model/train_full_model.py
-    by specifying them in checkpoint = torch.load(...) in line 567
     - train full model with src/full_model/train_full_model.py
 """
 RUN = 110
 RUN_COMMENT = """CLN in 23""" 
 SEED = 42
-PRETRAIN_WITHOUT_LM_MODEL = False
+PRETRAIN_WITHOUT_LM_MODEL = False 
 IMAGE_INPUT_SIZE = 512
 PERCENTAGE_OF_TRAIN_SET_TO_USE = 1.0
 PERCENTAGE_OF_VAL_SET_TO_USE = 1.0

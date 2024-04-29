@@ -33,7 +33,7 @@ BERTSCORE_SIMILARITY_THRESHOLD = 0.9
 IMAGE_INPUT_SIZE = 512
 MAX_NUM_TOKENS_GENERATE = 300
 NUM_BEAMS = 4
-mean = 0.471  # see get_transforms in src/dataset/compute_mean_std_dataset.py
+mean = 0.471 
 std = 0.302
 
 

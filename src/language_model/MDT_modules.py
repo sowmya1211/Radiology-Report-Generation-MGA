@@ -22,14 +22,8 @@ class ConditionalSublayerConnection(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x, att_mask, sublayer, memory): 
-        #print("x shape: ",x.shape)
         norm_states = self.norm(x,memory)
-        #print('Norm States shape: ',norm_states.shape)
-        # if layer_past: #Generation process
-        #     #Retrieve only the last layer in last dim
-        #     att_mask = att_mask[:,:,:,-1:]
         mha_output = sublayer(norm_states,att_mask)
-        #print('Output of MHA: ',mha_output.shape)
         return x + self.dropout(mha_output)
 
 class MultiHeadedAttention(nn.Module):
@@ -43,45 +37,23 @@ class MultiHeadedAttention(nn.Module):
         self.dropout = nn.Dropout(p=dropout)
 
     def attention(self, query, key, value, mask=None, dropout=None):
-        #print("Query Key Value sizes in attention: ",query.size(),key.size(),value.size())    
         d_k = key.size(-1) #query.size(-1)
         scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)
         if mask is not None:
-            #print("Scores: ",scores.shape,scores.dtype)
-            #print("Mask: ",mask.shape, mask.dtype)
             fill_value = torch.finfo(scores.dtype).min #0 #-1e4  #-1e9
             scores = torch.where(~mask, fill_value, scores)
         p_attn = F.softmax(scores, dim=-1)
         if dropout is not None: 
             p_attn = dropout(p_attn)
-        #print("p_attn :",p_attn.shape)
-        #print("value: ",value.shape)
-        '''
-        Multiplication of 4d tensors A[a1,a2,a3,a4] and B[b1,b2,b3,b4]
-        Then   a1 == b1 and a2 == b2
-        Last 2 dims compatible for matmul ie a4 == b3
-        '''
         return torch.matmul(p_attn, value), p_attn
 
     def forward(self, query, key, value, mask=None, present = None, layer_past = None): #layer_past: to det if gen process or not ; if present -> concatenate with  
-        #print("Query Key Value sizes in MHA fwd: ",query.size(),key.size(),value.size())  
-
         # Use linear layer on the same device
         self.linears[-1] = self.linears[-1].to(query.device) 
         nbatches = query.size(0)
         query, key, value = \
             [l(x).view(nbatches, -1, self.h, self.d_k).transpose(1, 2)
              for l, x in zip(self.linears, (query, key, value))]
-        
-        # if layer_past is not None: #Generation process - Further stages
-        #     past_key, past_value = present
-        #     #Remove last 2 layers of past_key and past_value along the 2nd last dim
-        #     past_key = past_key[..., :-2, :]
-        #     past_value = past_value[..., :-2, :]
-        #     #Adds extra layers alongisde 2nd last dim only by 1 in each fwd call (like attn mask)
-        #     key = torch.cat((past_key,key),dim=-2)
-        #     value = torch.cat((past_value,value),dim=-2)
-        #     #print("Key Value sizes in MHA fwd in gen process after adding key values in further generation: ",key.size(),value.size()) 
 
         if layer_past is not None: #Generation process - Further stages
             past_key, past_value = layer_past
@@ -90,20 +62,10 @@ class MultiHeadedAttention(nn.Module):
             past_value = past_value[..., 1:, :]
             #Adds extra layers alongisde 2nd last dim only by 1 in each fwd call (like attn mask)
             key = torch.cat((past_key,key),dim=-2)
-            value = torch.cat((past_value,value),dim=-2)
-            #print("Key Value sizes in MHA fwd in gen process after adding key values in further generation: ",key.size(),value.size()) 
-        
-        # if use_cache is True and layer_past is not None: #Update in further generations
-        #     present = (key,value)
-        # elif use_cache is True and layer_past is None: #Return previous present (from pseudo)
-        #     present = present
-        # else:
-        #     present = None
+            value = torch.cat((past_value,value),dim=-2) 
 
         x, self.attn = self.attention(query, key, value, mask=mask, dropout=self.dropout)
-        #print("X shape in MHA: ",x.shape)
         x = x.transpose(1, 2).contiguous().view(nbatches, -1, self.h * self.d_k)
-        #print("X shape after transpose: ",x.shape)
         l = self.linears[-1](x)
         return l
 
@@ -112,7 +74,6 @@ class ConditionalLayerNorm(nn.Module):
         super(ConditionalLayerNorm, self).__init__()
         self.gamma = nn.Parameter(gamma) #nn.Parameter(torch.ones(d_model))
         self.beta = nn.Parameter(beta) #nn.Parameter(torch.zeros(d_model))
-        #print(self.gamma.shape, self.beta.shape)
         
         self.rm_d_model = rm_d_model 
         self.rm_num_slots = rm_num_slots
@@ -142,21 +103,10 @@ class ConditionalLayerNorm(nn.Module):
         gamma_hat = torch.stack([gamma_hat] * x.size(1), dim=1)
         beta_hat = torch.stack([beta_hat] * x.size(0), dim=0)
         beta_hat = torch.stack([beta_hat] * x.size(1), dim=1)
-        # print(f"Shapes of tensors:\nGamma Hat {gamma_hat.shape}\nBeta Hat {beta_hat.shape}\nDelta Gamma {delta_gamma.shape}\nDelta Beta {delta_beta.shape}\n")
-        # print(f"Mean : Mean Shape \n {mean.shape} \n Std Deviation : \n Std Dev Shape {std.shape}")
         gamma_hat += delta_gamma
         beta_hat += delta_beta
         op = gamma_hat * (x - mean) / (std + self.eps) + beta_hat
         
-        #file = open("checkRM/run20-120-sublayerconn.txt", 'a')  #File to write word hidden states during diff stages
-        #file.write("\n-----------------------------------------------------------------------------------------------------------------------------------------------------------\n")  #SHORTENED FILE CHANGES
-        #file.write(f"Shapes of tensors:\nGamma Hat {gamma_hat.shape}\nBeta Hat {beta_hat.shape}\nDelta Gamma {delta_gamma.shape}\nDelta Beta {delta_beta.shape}\n")
-        #file.write(f"Mean : Mean Shape \n {mean.shape} \n Std Deviation : \n Std Dev Shape {std.shape}\n")
-        #file.write("No of Nan in output tensor after CondLayerNorm: "+str(torch.sum(torch.isnan(op)).item())+"\n")
-        #file.write("\n-----------------------------------------------------------------------------------------------------------------------------------------------------------\n")  #SHORTENED FILE CHANGES
-        
-        """with open('checkRM/example-ln_1-last.txt', 'a') as #file:
-            #file.write("No of Nan in output tensor after CondLayerNorm: "+str(torch.sum(torch.isnan(op)).item())+"\n")"""
         return op
     
 class RelationalMemory(nn.Module):
@@ -203,7 +153,6 @@ class RelationalMemory(nn.Module):
         q = memory
         k = torch.cat([memory, input.unsqueeze(1)], 1)
         v = torch.cat([memory, input.unsqueeze(1)], 1) 
-        #print(f"Devices: {memory.device}\n{q.device}\n{k.device}\n{v.device}")
         q, k, v = [t.to(memory.device) for t in (q, k, v)]
 
         attn = self.attn(q, k, v) #Past layers not taken into consideration
@@ -221,7 +170,6 @@ class RelationalMemory(nn.Module):
         return next_memory
 
     def forward(self, inputs, memory):
-        #inputs = inputs.to(memory.device)
         outputs = []
         for i in range(inputs.shape[1]):
             memory = self.forward_step(inputs[:, i], memory)

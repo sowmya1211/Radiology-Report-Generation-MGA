@@ -2,7 +2,7 @@ import copy
 import math
 from typing import Optional, Tuple
 
-from src.language_model.MDT_modules import clones, MultiHeadedAttention, ConditionalSublayerConnection, ConditionalLayerNorm, RelationalMemory
+from src.language_model.MDT_modules import clones, MultiHeadedAttention, ConditionalSublayerConnection, RelationalMemory
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -215,10 +215,6 @@ class LanguageModel(nn.Module):
         global device
         super().__init__()
 
-        print("------------------------------")
-        print("Language Model of rgrg+mdt-1")
-        print("------------------------------")
-
         self.checkpoint = "healx/gpt-2-pubmed-medium"
         self.device = device
         self.bos_token_id = 50256
@@ -235,18 +231,13 @@ class LanguageModel(nn.Module):
         #Defining Relational Memory
         self.rm = RelationalMemory() 
 
-        ''' START OF NEW CODE '''
         #Defining conditional sublayer connection
-        self.cond_sublayer_conn = None  #clones(ConditionalSublayerConnection(), 2)
+        self.cond_sublayer_conn = None 
         #Defining multiheaded attention as the first layer
         self.multihead_attn = MultiHeadedAttention()
-        #Defining an array of conditional layer norm 
-        #self.cond_layer_norm = None #[None] * 24
-        '''END OF NEW CODE'''
 
         # replace normal attention layers by pseudo attention layers
         self._replace_attention_by_pseudo_attention()
-        #self._replace_layer_norm_by_conditional_layer_norm()
         
         # divide model into GPT part and language modeling head part
         self.gpt = self.gpt_with_lm_head.transformer
@@ -294,27 +285,8 @@ class LanguageModel(nn.Module):
             if i in [23]: #Last block
             #Identify parameters of first layer norm in GPT2 blocks to create a new conditional layer norm
                 weights, bias = self.gpt_with_lm_head.transformer.h[i].ln_1.weight.data, self.gpt_with_lm_head.transformer.h[i].ln_1.bias.data
-                ''' START OF NEW CODE '''
-                #NO NEED TO REPLACE
-                #self.gpt_with_lm_head.transformer.h[i].ln_1 = ConditionalLayerNorm(gamma = weights, beta = bias)
-
                 #PASSING THE GAMMA AND BETA TO subconn to include that in MCLN
                 self.cond_sublayer_conn = ConditionalSublayerConnection(gamma=weights,beta=bias)
-                #self.cond_layer_norm[i] = ConditionalLayerNorm(gamma=weights,beta=bias)
-                ''' END OF NEW CODE '''
-                
-                
-
-        # #Replace FinalLayerNorm - GPT_Children[4] with ConditionalLayerNorm
-        # transformer_modules = list(self.gpt_with_lm_head.transformer.children())
-        # transformer_modules[4] = ConditionalLayerNorm()
-        # self.gpt_with_lm_head.transformer = nn.ModuleList(transformer_modules)
-            
-
-    # def _replace_layer_norm_by_conditional_layer_norm(self):
-    #     for gpt2_block in self.gpt_with_lm_head.transformer.h:
-    #         print(gpt2_block.ln_1)
-    #         gpt2_block.ln_1 = ConditionalLayerNorm()
 
     def forward(self,
                 input_ids: torch.LongTensor,  # shape [batch_size x seq_len]
@@ -338,15 +310,9 @@ class LanguageModel(nn.Module):
         Furthermore, the label at the first position of the sequence is discarded and the labels are shifted accordingly (i.e. one to the left),
         such that the language modeling logits align with the labels that they are trying to predict.
         """
-        #File to write word hidden states during diff stages
-        #file = open("checkRM/run20-120-sublayerconn.txt", 'a') #File to write word hidden states during diff stages
-
-        '''START NEW CODE'''
+       
         #Copy of attention_mask to be used for MCLN's MHA
         attention_mask_copy = attention_mask.to(attention_mask.device)
-        #print("Attention Mask Copy Size: ",attention_mask_copy.shape)
-        #print("Input ids shape: ",input_ids.shape)
-        '''END NEW CODE'''
         # get a boolean copy of the attention_mask and invert it
         mask_to_ignore_padding_tokens_for_loss_computation = ~(attention_mask.to(torch.bool))
 
@@ -403,30 +369,14 @@ class LanguageModel(nn.Module):
         attention_mask = attention_mask.to(dtype=next(self.parameters()).dtype)  # dtype should be either torch.float32 or torch.float16
         attention_mask = (1.0 - attention_mask) * -10000.0
 
-        #print("Attention mask size (To pseudo attn): ",attention_mask.shape)
-
         presents = () if use_cache else None
 
-        ''''START NEW CODE'''
         attention_mask_copy = attention_mask_copy.to(torch.bool)
         attention_mask_copy = attention_mask_copy.view(batch_size, -1) # shape [batch_size,seq_len]
         attention_mask_copy = attention_mask_copy.unsqueeze(1).unsqueeze(1) # shape [batch_size, 1, 1, seq_len]
-        '''END NEW CODE'''
-
-        ##file.write("Word Hidden States: \n"+str(word_hidden_states)+"\n Shape: "+str(word_hidden_states.size())+"\n\n")
-        #file.write("Word Hidden States: \n"+str(word_hidden_states[0, :, :100])+"\n Shape: "+str(word_hidden_states.size())+"\n\n")  #SHORTENED FILE CHANGES
-
-        ''''START NEW CODE'''
         #Intialize RelationalMemory to incorporate ConditionalLayerNorm
         memory = self.rm.init_memory(word_hidden_states.device, word_hidden_states.size(0)).to(word_hidden_states.device) 
         memory = self.rm(word_hidden_states, memory)
-        '''END NEW CODE'''
-
-        ##file.write("Memory after RM: \n"+str(memory)+ "\n Shape: "+str(memory.size())+"\n\n") 
-        #file.write("Memory after RM: \n"+str(memory[0,:,:300])+ "\n Shape: "+str(memory.size())+"\n\n") #SHORTENED FILE CHANGES
-
-        # memory = self.rm.init_memory(word_hidden_states.size(0)).to(word_hidden_states)
-        # memory = self.rm(word_hidden_states, memory)
         
         block_num = 0
         for gpt2_block, layer_past in zip(self.gpt2_blocks, past_key_values):
@@ -436,70 +386,27 @@ class LanguageModel(nn.Module):
             mlp = gpt2_block[3]
 
             residual = word_hidden_states
-
-            #file.write("Block Num: "+str(block_num))
-            #file.write("\n-----------------------------------------------------------------------------------------------------------------------------------------------------------\n") 
-            
-            ''' START OF NEW CODE '''
-            # if block_num in [23]: #ConditonalLayerNorm
-            #     word_hidden_states = layer_norm_1(word_hidden_states, memory)
-            #     #file.write("Word Hidden States after conditional layer normalization: \n"+str(word_hidden_states[0, :, :100])+"\n Shape: "+str(word_hidden_states.size())+"\n\n") #SHORTENED FILE CHANGES
-            # else: #LayerNorm
-            #     word_hidden_states = layer_norm_1(word_hidden_states)
-            #     #file.write("Word Hidden States after layer normalization 1: \n"+str(word_hidden_states[0, :, :100])+"\n Shape: "+str(word_hidden_states.size())+"\n\n") #SHORTENED FILE CHANGES
          
-            #if block_num not in [23]: #First 23 layers , normal LN1 and Pseudo self attention
             word_hidden_states = layer_norm_1(word_hidden_states) #First LN1
             word_hidden_states, present = pseudo_self_attention(word_hidden_states, image_hidden_states, attention_mask, layer_past, use_cache) #Pseudo Attention
 
             # residual connection
             word_hidden_states = word_hidden_states + residual
-            # residual = word_hidden_states
-            #file.write("Word Hidden States after ln1 and pseudo attn: \n"+str(word_hidden_states[0, :, :100])+"\n Shape: "+str(word_hidden_states.size())+"\n\n")  #SHORTENED FILE CHANGES
-
-            # else : #MCLN with pseudo attention for last layer
-            #     #Apply pseudo attention
-            #     word_hidden_states, present = pseudo_self_attention(word_hidden_states, image_hidden_states, attention_mask, layer_past, use_cache) #Pseudo Attention
-            #     #Apply MCLN with Conditional Sublayer connection
-            #     word_hidden_states = self.cond_sublayer_conn(word_hidden_states, lambda word_hidden_states: self.multihead_attn(word_hidden_states,word_hidden_states,word_hidden_states,attention_mask_copy), memory)            
-
-            
-            #file.write("\n-----------------------------------------------------------------------------------------------------------------------------------------------------------\n") 
-            #file.write("No of Nan in output tensor after ln1 and pseudo attn: "+str(torch.sum(torch.isnan(word_hidden_states)).item())+"\n")
-            #file.write("\n-----------------------------------------------------------------------------------------------------------------------------------------------------------\n") 
-
-            '''START OF NEWLY ADDED CODE'''
+    
             #Adding sublayer connection to 23rd block alone to include MCLN and Multi Headed Attn
             if block_num in [23]: # and layer_past is None: #Only testing
 
                 #Adding layer_past to cond subconn to det if generation process and accordingly resize attention_mask
-                #print("Attention Mask Copy Size (To MHA MCLN): ",attention_mask_copy.shape) #(batch_size,1,1,seq_len)
                 word_hidden_states = self.cond_sublayer_conn(word_hidden_states, attention_mask_copy, lambda x,att_mask: self.multihead_attn(x,x,x,mask=att_mask,present = present, layer_past=layer_past), memory)
-                #file.write("Word Hidden States after MCLN and MultiHeaded Attn: \n"+str(word_hidden_states[0, :, :100])+"\n Shape: "+str(word_hidden_states.size())+"\n\n")  #SHORTENED FILE CHANGES
-                ##file.write("\n-----------------------------------------------------------------------------------------------------------------------------------------------------------\n") 
-                ##file.write("No of Nan in output tensor after MCLN and MultiHeaded Attn: "+str(torch.sum(torch.isnan(word_hidden_states)).item())+"\n")
-                #file.write("\n-----------------------------------------------------------------------------------------------------------------------------------------------------------\n") 
-                # Replace NaN values with the minimum value
-                word_hidden_states = torch.nan_to_num(word_hidden_states, nan=-1e3) #torch.finfo(torch.float16).min
-                #NO NEED TO ADD RESIDUAL CONNECTION AS SUBLAYER CONNECTION ADDS IT
-                # residual connection
-                # word_hidden_states = word_hidden_states + residual
-                # residual = word_hidden_states
-                ##file.write("Word Hidden States after MCLN and MultiHeaded Attn and residual: \n"+str(word_hidden_states[0, :, :100])+"\n Shape: "+str(word_hidden_states.size())+"\n\n")  #SHORTENED FILE CHANGES           
+                word_hidden_states = torch.nan_to_num(word_hidden_states, nan=-1e3) #torch.finfo(torch.float16).min        
             
             residual = word_hidden_states
-            ''' END OF NEW CODE '''
             
             word_hidden_states = layer_norm_2(word_hidden_states)
             word_hidden_states = mlp(word_hidden_states)
 
-            # word_hidden_states = layer_norm_2(word_hidden_states)  #NEW CHANGES 
-            # #file.write("Word Hidden States after Last new layer norm: \n"+str(word_hidden_states[0, :, :100])+"\n Shape: "+str(word_hidden_states.size())+"\n\n") #SHORTENED FILE CHANGES
-
             # residual connection
             word_hidden_states = word_hidden_states + residual
-
-            #file.write("Final word hidden states: \n"+str(word_hidden_states[0, :, :100])+"\n Shape: "+str(word_hidden_states.size())+"\n\n")  #SHORTENED FILE CHANGES
 
             if use_cache:
                 presents += (present,)
