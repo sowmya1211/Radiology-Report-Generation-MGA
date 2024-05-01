@@ -4,6 +4,10 @@ import io
 from PIL import Image
 import base64
 import pandas as pd
+import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
+
 
 from src.full_model.my_inference import infer
 
@@ -15,6 +19,19 @@ TEST_IMAGES_FOLDER = '../Radiology-Report-Generation---MGA/dataset-with-referenc
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+def get_images():
+    #print(os.getcwd())
+    image_directory = "../Radiology-Report-Generation---MGA/src/web-app/images"
+    image_files = [file for file in os.listdir(image_directory) if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif'))]
+    images = []
+    for x in image_files:
+        file_obj = open(image_directory+"/"+x, 'rb')
+        image_data = file_obj.read()
+        image_data_base64 = base64.b64encode(io.BytesIO(image_data).read()).decode()
+        images.append(image_data_base64)
+    return images
+
+'''START Image Folder Dropdown '''
 # Function to check if the file extension is allowed
 def allowed_file(filename):
     return '.' in filename and \
@@ -32,39 +49,49 @@ def filter_row(target_value):
     filtered_rows = df[df['mimic_image_file_path'] == target_value]
     return filtered_rows
 
-def get_images():
-    print(os.getcwd())
-    image_directory = "./images"
-    image_files = [file for file in os.listdir(image_directory) if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif'))]
-    images = []
-    for x in image_files:
-        file_obj = open(image_directory+"/"+x, 'rb')
-        image_data = file_obj.read()
-        image_data_base64 = base64.b64encode(io.BytesIO(image_data).read()).decode()
-        images.append(image_data_base64)
-    return images
-
 # Route for the home page
 @app.route('/')
 def index():
     # Get list of images in the uploads folder
     image_files = find_jpeg_files_from_csv()    
-    #image_files = [f for f in os.listdir(app.config['UPLOAD_FOLDER']) if allowed_file(f)]
     return render_template('index.html', image_files=image_files)
+'''END Image Folder Dropdown '''
+
+'''START Image Folder Upload '''
+# # Route for the home page
+# @app.route('/')
+# def index():   
+#     return render_template('index.html')
+'''END Image Folder Upload '''
 
 # Route to display the selected image and result
 @app.route('/process', methods=['POST'])
 def process_image():
+
+    '''START Image Folder Dropdown '''
     selected_image = request.form['selected_image']
     image_path = selected_image
-
     row = filter_row(image_path)
+    '''END Image Folder Dropdown '''
+
+    '''START Image Folder Upload '''
+    # if 'image' not in request.files:
+    #     return "No file part"
+    # file = request.files['image']
+    # if file.filename == '':
+    #     return "No selected image file"
+    # if file:
+    #     filename = file.filename
+    #     image_directory = "../Radiology-Report-Generation---MGA/src/web-app/images"
+    #     image_path = (image_directory + '/'+ filename)
+    #     print(f"Image File saved at: {image_path}")
+    '''END Image Folder Upload '''
+  
     gen_sentences_with_corresponding_regions, gen_and_ref_reports = infer(image_path)
     print("Generated and Reference Reports:\n",gen_and_ref_reports)
     print("Generated sentences and their corresponding regions:\n",gen_sentences_with_corresponding_regions)
     
     generated_reports = gen_and_ref_reports['generated_reports']
-    removed_similar_generated_sentences = gen_and_ref_reports['removed_similar_generated_sentences']
     reference_reports = gen_and_ref_reports['reference_reports']
     gen_sentences_with_corresponding_regions = gen_sentences_with_corresponding_regions[0]
     
@@ -72,7 +99,7 @@ def process_image():
 
     
     # Pass the selected image to the ML model for processing
-    result = "Output"#predict(image_path)  # Replace with your ML model function
+    result = "Output"
     
     file_obj = open(image_path, 'rb')
     image_data = file_obj.read()
@@ -80,20 +107,12 @@ def process_image():
     
     images = get_images()
     
-    parts = selected_image.split('/')
-    subject_id = parts[-3][1:]  # Remove 'p' prefix
-    study_id = parts[-2][1:]    # Remove 's' prefix
-    image_id = parts[-1]
-    
-    return render_template('result.html', subject_id=subject_id,
-                           study_id=study_id,
-                           image_id=image_id,
-                           selected_image=selected_image, 
+    return render_template('result.html', 
+                           image_path=image_path, 
                            result=result, 
                            image_data=image_data_base64, 
                            image_files = images, 
                            generated_reports=generated_reports, 
-                           removed_similar_generated_sentences=removed_similar_generated_sentences,
                            reference_reports=reference_reports,
                            region_sentence_pairs=region_sentence_pairs)
 

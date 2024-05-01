@@ -1,33 +1,3 @@
-<!--
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Result</title>
-    <style>
-        /* Adjust the width and height of the image */
-        img {
-            width: 50%; /* Adjust as needed */
-            height: auto; /* Maintains aspect ratio */
-        }
-    </style>
-</head>
-<body>
-    <h1>Result</h1>
-    <h2>Selected Image: {{ selected_image }}</h2>
-    <p>Result from ML model: {{ result }}</p>
-    <img src="data:image/jpeg;base64,{{ image_data }}" alt="Selected Image">
-    <div class="gallery">
-        {% for image_file in image_files %}
-            <img src="data:image/jpeg;base64,{{ image_file }}" style="width: 300px; height: 300px; margin: 10px;">
-        {% endfor %}
-    </div>
-</body>
-</html>
--->
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -114,11 +84,8 @@
     <div class="container">
         <h1 style="text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1)">Automatic Report Generation for Medical Images Using Deep Learning Techniques</h1>
         
+        <h3>Image Path: {{image_path}}</h3>
         <h2>Input Image</h2>
-
-        <h3>Subject ID: {{ subject_id }}</h3>
-        <h3>Study ID: {{ study_id }}</h3>
-        <h3>Image ID: {{ image_id }}</h3>
 
         <img src="data:image/jpeg;base64,{{ image_data }}" alt="Selected Image" width="50px" height="50px">
 
@@ -133,7 +100,7 @@
         <ul>
             {% for report in reference_reports %}
                 <li>{{ report }}</li>
-            {% endfor %}
+            {% endfor %} 
         </ul>
         
 

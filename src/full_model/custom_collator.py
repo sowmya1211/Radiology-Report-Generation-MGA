@@ -106,7 +106,7 @@ class CustomCollator:
     def transform_to_dict_with_inputs_ids_and_attention_masks(self, batch):
         dict_with_ii_and_am = {"input_ids": [], "attention_mask": []}
         for single_dict in batch:
-            for key, outer_list in single_dict.items():
+            for key, outer_list in single_dict.items(): 
                 for inner_list in outer_list:
                     dict_with_ii_and_am[key].append(inner_list)
 

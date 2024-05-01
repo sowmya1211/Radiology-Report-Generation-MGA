@@ -31,8 +31,11 @@ Decoder is based on Generative Pre-trained Transformer (GPT2) with pseudo-attent
 2. Download CheXbert model checkpoint from [link](https://stanfordmedicine.box.com/s/c3stck6w6dol3h36grdc97xoydzxd7w9) <br>
    Store the checkpoint in this directory [CheXbert_checkpoint](src/CheXbert/src/models)
 
-3. Download the full model checkpoint from this [google drive link](https://drive.google.com/file/d/1x6yjKv7CbbCI2xa2tAcjaIYMVBIjV2mH/view?usp=sharing <br>
+3. Download the full model checkpoint from this [google drive link](https://drive.google.com/file/d/1x6yjKv7CbbCI2xa2tAcjaIYMVBIjV2mH/view?usp=sharing) <br>
    Store the checkpoint in this directory [full_model_checkpoint](runs/full_model/run_122/checkpoints)
+
+4. Download the object detector model checkpoint from this [google drive link](https://drive.google.com/file/d/1E5ky_khhzhVXXUslZ4OiSU_Ab1MjoFlq/view?usp=sharing) <br>
+   Store the checkpoint in this directory [obj_detector_checkpoint](runs/object_detector/run_1/weights)
 
 4. In [path_datasets_and_weights.py](src/path_datasets_and_weights.py), follow the instructions to download specific folders from the datasets links <br>
    Specify the paths to the various datasets (Chest ImaGenome, MIMIC-CXR, MIMIC-CXR-JPG), CheXbert weights, and other important folders

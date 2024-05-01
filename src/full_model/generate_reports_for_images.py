@@ -233,7 +233,6 @@ def get_model(checkpoint_path):
 def main():
     #RUN 122 - Num_slots:2 
     checkpoint_path = "../Radiology-Report-Generation---MGA/dataset-with-reference-reports/runs/full_model/run_122/checkpoints/checkpoint_val_loss_22.038_overall_steps_14010.pt"
-    
 
     model = get_model(checkpoint_path) 
 
@@ -265,5 +264,5 @@ def main():
     write_generated_reports_to_txt(images_paths, generated_sentences, generated_reports, generated_reports_txt_path)
 
  
-if __name__ == "__main__":
+if __name__ == "__main__": 
     main()

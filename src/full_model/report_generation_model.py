@@ -31,8 +31,8 @@ class ReportGenerationModel(nn.Module):
 
         self.object_detector = ObjectDetector(return_feature_vectors=True)
         # Load the best object detector from the 1st training stage here when starting the 2nd training stage 
-        path_to_best_object_detector_weights = "../Radiology-Report-Generation---MGA/runs/object_detector/run_1/weights" #Resnet_50
-        self.object_detector.load_state_dict(torch.load(path_to_best_object_detector_weights))
+        path_to_best_object_detector_weights = "../Radiology-Report-Generation---MGA/runs/object_detector/run_1/weights/val_loss_14.144_epoch_18.pth" #Resnet_50
+        self.object_detector.load_state_dict(torch.load(path_to_best_object_detector_weights,map_location=torch.device(device=device)))
 
         self.binary_classifier_region_selection = BinaryClassifierRegionSelection()
         self.binary_classifier_region_abnormal = BinaryClassifierRegionAbnormal()
